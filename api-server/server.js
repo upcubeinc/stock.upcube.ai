@@ -12,7 +12,7 @@ const fetchText = async (url) => { const r = await fetch(url, {headers:UA}); if(
 const normalizeCandles = (ts, q) => {
   const O=q.open||[], H=q.high||[], L=q.low||[], C=q.close||[], V=q.volume||[];
   return (ts||[]).map((t,i)=>({
-    time:Number(t),
+    time: Number(t) * 1000,
     open:+O[i], high:+H[i], low:+L[i], close:+C[i],
     volume: Number.isFinite(+V[i]) ? +V[i] : 0,
   })).filter(c => Number.isFinite(c.open) && Number.isFinite(c.close));
@@ -25,7 +25,7 @@ const stooqDaily = async (symbol) => {
   return rows.map(line=>{
     const p=line.split(","), [date, open, high, low, close] = p;
     const vol = Number(p[5]||0);
-    const t = Math.floor(new Date(date+"T00:00:00Z").getTime()/1000);
+    const t = new Date(date+"T00:00:00Z").getTime();
     return { time:t, open:+open, high:+high, low:+low, close:+close, volume:vol };
   }).filter(c=>Number.isFinite(c.open) && Number.isFinite(c.close));
 };
