@@ -1,48 +1,15 @@
-import React, { useState } from "react";
-import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import StockChart from "./components/StockChart.jsx";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import QuotePage from "./components/QuotePage/QuotePage.jsx";
 
-function TopBar() {
-  const [q, setQ] = useState("");
-  const nav = useNavigate();
-  const go = () => { if (q.trim()) nav("/" + q.trim().toUpperCase()); };
-  return (
-    <nav>
-      <Link to="/AAPL">AAPL</Link>
-      <Link to="/MSFT">MSFT</Link>
-      <Link to="/TSLA">TSLA</Link>
-      <Link to="/NVDA">NVDA</Link>
-      <Link to="/SPY">SPY</Link>
-      <input
-        type="text"
-        placeholder="Jump to symbol (e.g. AMZN)"
-        value={q}
-        onChange={(e)=>setQ(e.target.value)}
-        onKeyDown={(e)=>{ if(e.key==="Enter") go(); }}
-      />
-    </nav>
-  );
-}
-
-function SymbolPage(){
-  const { symbol } = useParams();
-  return (
-    <div className="container">
-      <h2>{symbol}</h2>
-      <div className="card">
-        <StockChart symbol={symbol} />
-      </div>
-    </div>
-  );
-}
+function Page(){ const { symbol } = useParams(); return <QuotePage symbol={(symbol||"AAPL").toUpperCase()} />; }
 
 export default function App(){
   return (
     <BrowserRouter>
-      <TopBar />
       <Routes>
         <Route index element={<Navigate to="/AAPL" replace />} />
-        <Route path="/:symbol" element={<SymbolPage />} />
+        <Route path="/:symbol" element={<Page />} />
         <Route path="*" element={<Navigate to="/AAPL" replace />} />
       </Routes>
     </BrowserRouter>
