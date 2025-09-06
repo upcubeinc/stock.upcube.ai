@@ -1,0 +1,31 @@
+<!doctype html><html><head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Standalone LWC Probe</title>
+  <script defer src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body{margin:0;background:#0b0b0b;color:#fff;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    #box{height:220px;margin:16px;border:1px solid #333;border-radius:8px}
+  </style>
+</head><body>
+  <div style="padding:12px">Standalone probe</div>
+  <div id="box"></div>
+  <script>
+    (function ready(f){document.readyState!=='loading'?f():document.addEventListener('DOMContentLoaded',f)})(function(){
+      var tries=0, id=setInterval(function(){
+        if (window.LightweightCharts && typeof window.LightweightCharts.createChart==='function'){
+          clearInterval(id);
+          var el=document.getElementById('box');
+          var chart=window.LightweightCharts.createChart(el,{width:el.clientWidth||900,height:220});
+          var line=chart.addLineSeries({lineWidth:2});
+          var now=Math.floor(Date.now()/1000), d=86400;
+          line.setData([
+            {time:now-4*d,value:100},{time:now-3*d,value:101},
+            {time:now-2*d,value:102.2},{time:now-1*d,value:101.4},{time:now,value:103.1}
+          ]);
+          window.addEventListener('resize',()=>chart.applyOptions({width:el.clientWidth||900}));
+        } else if (++tries>120){ clearInterval(id); console.error('Standalone: LWC not available'); }
+      },50);
+    });
+  </script>
+</body></html>
