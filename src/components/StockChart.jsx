@@ -1,6 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createChart } from "lightweight-charts";   // <-- canonical import
+import { createChart as createChartModule } from "lightweight-charts";
 import { fetchDailyOHLC } from "../lib/ohlc";
+
+// pick the best available createChart
+function getCreateChart() {
+  if (typeof window !== "undefined" && window.LightweightCharts?.createChart) {
+    return window.LightweightCharts.createChart;
+  }
+  if (typeof createChartModule === "function") return createChartModule;
+  throw new Error("Lightweight Charts not loaded");
+}
 
 export default function StockChart({ symbol }) {
   const mountRef = useRef(null);
@@ -13,12 +22,10 @@ export default function StockChart({ symbol }) {
     (async () => {
       try {
         setStatus("loading"); setMsg("");
+
+        const createChart = getCreateChart(); // <-- always valid now
         const data = await fetchDailyOHLC(symbol);
         if (!alive) return;
-
-        if (typeof createChart !== "function") {
-          throw new Error("createChart import failed");
-        }
 
         const width = mountRef.current?.clientWidth || 960;
         chart = createChart(mountRef.current, {
@@ -30,7 +37,7 @@ export default function StockChart({ symbol }) {
           timeScale: { borderVisible: false },
         });
 
-        // Prefer candles; fallback to line if something’s odd
+        // Prefer candles; fallback to line (shouldn’t be needed with UMD build)
         if (typeof chart.addCandlestickSeries === "function") {
           series = chart.addCandlestickSeries({
             upColor: "#16a34a", downColor: "#ef4444",
@@ -42,7 +49,7 @@ export default function StockChart({ symbol }) {
           series = chart.addLineSeries({ lineWidth: 2 });
           series.setData(data.map(d => ({ time: d.time, value: d.close })));
         } else {
-          throw new Error("Chart API missing addSeries methods");
+          throw new Error("Chart API missing series methods");
         }
 
         const onResize = () => chart.applyOptions({ width: mountRef.current?.clientWidth || 960 });
@@ -64,10 +71,10 @@ export default function StockChart({ symbol }) {
   }, [symbol]);
 
   return (
-    <div style={{ width:"100%", maxWidth: 1200, margin:"0 auto" }}>
+    <div style={{ width:"100%", maxWidth:1200, margin:"0 auto" }}>
       {status === "loading" && <div style={{padding:12,opacity:0.8}}>Loading {symbol}…</div>}
       {status === "error"   && <div style={{padding:12,border:"1px solid #ef4444",color:"#fecaca"}}>Error: {msg}</div>}
-      <div ref={mountRef} style={{ width:"100%", height: 440, border:"1px solid rgba(255,255,255,0.12)", borderRadius:12 }} />
+      <div ref={mountRef} style={{ width:"100%", height:440, border:"1px solid rgba(255,255,255,0.12)", borderRadius:12 }} />
     </div>
   );
 }
