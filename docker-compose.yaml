@@ -6,5 +6,4 @@ services:
     container_name: stock_charts
     restart: unless-stopped
     ports:
-      - "9099:80"   # maps host port 8099 → container port 80
-
+      - "9099:80"  
