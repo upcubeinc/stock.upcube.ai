@@ -10,6 +10,7 @@ export default function QuoteChart({ symbol }){
       interval={sp.get("interval")||"1d"}
       range={sp.get("tf")||"6mo"}
       type={sp.get("type")||"area"}
+      cmp={(sp.get("cmp")||"").toUpperCase()}
     />
   );
 }
