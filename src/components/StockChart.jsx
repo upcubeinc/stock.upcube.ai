@@ -1,19 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { fetchDailyOHLC } from "../lib/ohlc";
 
-function waitForLWC() {
-  return new Promise((resolve, reject) => {
-    let tries = 0, id = setInterval(() => {
-      const LWC = window.LightweightCharts;
-      if (LWC && typeof LWC.createChart === "function") {
-        clearInterval(id); resolve(LWC);
-      } else if (++tries > 140) {
-        clearInterval(id); reject(new Error("LightweightCharts UMD not ready"));
-      }
-    }, 50);
-  });
-}
-
 export default function StockChart({ symbol }) {
   const mountRef = useRef(null);
   const [status, setStatus] = useState("loading");
@@ -26,33 +13,41 @@ export default function StockChart({ symbol }) {
     (async () => {
       try {
         setStatus("loading"); setMsg("");
-        const LWC = await waitForLWC();
-        if (!alive) return;
+
+        // wait for UMD
+        let tries=0; while(!(window.LightweightCharts && window.LightweightCharts.createChart)){
+          await new Promise(r=>setTimeout(r,50));
+          if(++tries>140) throw new Error("LightweightCharts UMD not ready");
+        }
+        const LWC = window.LightweightCharts;
 
         const data = await fetchDailyOHLC(symbol);
         if (!alive) return;
 
         const el = mountRef.current;
-        if (!el) throw new Error("mountRef missing");
+        const width = el?.clientWidth || 960;
 
-        const chartWidth = el.clientWidth || 960;
         chart = LWC.createChart(el, {
-          width: chartWidth, height: 440,
+          width, height: 420,
           layout: { background: { type: "solid", color: "#0b0b0b" }, textColor: "#e5e7eb" },
           grid: { vertLines: { color: "rgba(255,255,255,0.08)" }, horzLines: { color: "rgba(255,255,255,0.08)" } },
           rightPriceScale: { borderVisible: false },
           timeScale: { borderVisible: false },
         });
 
-        if (typeof chart.addLineSeries !== "function") throw new Error("Chart API missing addLineSeries");
-        const series = chart.addLineSeries({ lineWidth: 2 });
-        series.setData(data.map(d => ({ time: d.time, value: d.close })));
+        // v4 has candlesticks API
+        const series = chart.addCandlestickSeries({
+          upColor: "#16a34a", downColor: "#ef4444",
+          borderUpColor: "#16a34a", borderDownColor: "#ef4444",
+          wickUpColor: "#16a34a", wickDownColor: "#ef4444",
+        });
+        series.setData(data);
 
-        const onResize = () => chart.applyOptions({ width: el.clientWidth || chartWidth });
+        const onResize = () => chart.applyOptions({ width: el?.clientWidth || width });
         window.addEventListener("resize", onResize);
 
         setStatus("ready");
-        return () => { window.removeEventListener("resize", onResize); chart.remove(); };
+        return () => { window.removeEventListener("resize", onResize); chart?.remove(); };
       } catch (e) {
         console.error(e);
         setStatus("error"); setMsg(String(e?.message || e));
@@ -63,10 +58,10 @@ export default function StockChart({ symbol }) {
   }, [symbol]);
 
   return (
-    <div style={{ width:"100%", maxWidth: 1200, margin:"0 auto" }}>
-      {status === "loading" && <div style={{padding:12,opacity:0.8}}>Loading {symbol}…</div>}
-      {status === "error"   && <div style={{padding:12,border:"1px solid #ef4444",color:"#fecaca"}}>Error: {msg}</div>}
-      <div ref={mountRef} style={{ width:"100%", height: 440, border:"1px solid rgba(255,255,255,0.12)", borderRadius:12 }} />
+    <div>
+      {status === "loading" && <div style={{padding:"8px 0",opacity:0.7}}>Loading {symbol}…</div>}
+      {status === "error"   && <div style={{padding:"8px 0",color:"#fecaca",border:"1px solid #ef4444",borderRadius:8}}>Error: {msg}</div>}
+      <div ref={mountRef} style={{ width:"100%", height:420 }} />
     </div>
   );
 }
