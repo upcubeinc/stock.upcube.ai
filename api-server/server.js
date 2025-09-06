@@ -10,16 +10,17 @@ const fetchText = async (url) => { const r = await fetch(url, {headers:UA}); if(
 
 // Normalize OHLC candles
 const normalizeCandles = (ts, q) => {
-  const O=q.open||[], H=q.high||[], L=q.low||[], C=q.close||[], V=q.volume||[];
-  return (ts||[]).map((t,i)=>({
+  const O = q.open || [], H = q.high || [], L = q.low || [], C = q.close || [], V = q.volume || [];
+  return (ts || []).map((t,i) => {
     const raw = Number(t);
     const timeMs = raw > 1e12 ? raw : raw * 1000;
-    time: timeMs,
-    open:+O[i], high:+H[i], low:+L[i], close:+C[i],
-    volume: Number.isFinite(+V[i]) ? +V[i] : 0,
-  })).filter(c => Number.isFinite(c.open) && Number.isFinite(c.close));
+    return {
+      time: timeMs,
+      open: +O[i], high: +H[i], low: +L[i], close: +C[i],
+      volume: Number.isFinite(+V[i]) ? +V[i] : 0,
+    };
+  }).filter(c => Number.isFinite(c.open) && Number.isFinite(c.close));
 };
-
 // Fallback stooq daily CSV
 const stooqDaily = async (symbol) => {
   const txt = await fetchText(`https://stooq.com/q/d/l/?s=${symbol.toLowerCase()}.us&i=d`);
