@@ -1,49 +1,6 @@
 export async function fetchOHLC(symbol, { interval = "1d", range = "6mo" } = {}) {
   symbol = String(symbol||"").trim().toUpperCase();
-
-  // Yahoo v8
-  try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Yahoo status " + res.status);
-    const j = await res.json();
-    const r = j?.chart?.result?.[0];
-    const ts = r?.timestamp || [];
-    const q  = r?.indicators?.quote?.[0] || {};
-    const O=q.open||[], H=q.high||[], L=q.low||[], C=q.close||[], V=q.volume||[];
-    const data = ts.map((t,i)=>({
-      time:Number(t),
-      open:+O[i], high:+H[i], low:+L[i], close:+C[i],
-      volume: Number.isFinite(+V[i]) ? +V[i] : 0
-    })).filter(d => Number.isFinite(d.open) && Number.isFinite(d.close));
-    if (data.length) return { candles:data };
-    throw new Error("Yahoo empty");
-  } catch {}
-
-  // Stooq CSV fallback (daily only)
-  try {
-    const txt = await fetch(`https://stooq.com/q/d/l/?s=${symbol.toLowerCase()}.us&i=d`).then(r=>r.text());
-    const rows = txt.trim().split(/\r?\n/).slice(1);
-    const data = rows.map(line=>{
-      const parts = line.split(",");
-      const [date, open, high, low, close] = parts;
-      const volume = Number(parts[5] || 0);
-      const t = Math.floor(new Date(date+"T00:00:00Z").getTime()/1000);
-      return { time:t, open:+open, high:+high, low:+low, close:+close, volume };
-    }).filter(d => Number.isFinite(d.open) && Number.isFinite(d.close));
-    if (data.length) return { candles:data };
-  } catch {}
-
-  // Demo last resort
-  const now = Math.floor(Date.now()/1000), day=86400, base=100;
-  const demo = Array.from({length:60},(_,i)=>{
-    const t = now - (59-i)*day;
-    const o = base + i*0.5;
-    const c = o + (Math.random()-0.5)*2;
-    const h = Math.max(o,c) + Math.random()*1.5;
-    const l = Math.min(o,c) - Math.random()*1.5;
-    const v = 1e6 + Math.floor(Math.random()*5e5);
-    return { time:t, open:o, high:h, low:l, close:c, volume:v };
-  });
-  return { candles:demo };
+  const url = `/api/ohlc?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
+  const j = await fetch(url).then(r=>r.json());
+  return { candles: j.candles || [] };
 }
