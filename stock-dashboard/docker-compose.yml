@@ -1,9 +1,0 @@
-version: "3.8"
-
-services:
-  stock_charts:
-    build: .
-    container_name: stock_charts
-    restart: unless-stopped
-    ports:
-      - "8099:80"
