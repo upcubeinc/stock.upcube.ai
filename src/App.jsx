@@ -1,10 +1,9 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Link, Navigate, useParams } from "react-router-dom";
+import React, { useState } from "react";
+import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import StockChart from "./components/StockChart.jsx";
 
 function SymbolPage() {
   const { symbol } = useParams();
-  console.log("Route param:", symbol);
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ marginBottom: 12 }}>{symbol}</h2>
@@ -13,25 +12,30 @@ function SymbolPage() {
   );
 }
 
-function Home() {
+function TopBar() {
+  const [q, setQ] = useState("");
+  const nav = useNavigate();
   return (
-    <div style={{ padding: 16 }}>
-      <h2>Welcome</h2>
-      <p>Select a ticker above.</p>
-    </div>
+    <nav style={{ padding: 12, display: "flex", gap: 12, alignItems:"center" }}>
+      <Link to="/AAPL">AAPL</Link>
+      <Link to="/MSFT">MSFT</Link>
+      <input
+        value={q}
+        onChange={(e)=>setQ(e.target.value)}
+        onKeyDown={(e)=>{ if(e.key==="Enter" && q.trim()) nav("/" + q.trim().toUpperCase()); }}
+        placeholder="Jump to symbol (e.g. TSLA)"
+        style={{ background:"#141414", color:"#fff", border:"1px solid #333", borderRadius:8, padding:"8px 10px" }}
+      />
+    </nav>
   );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <nav style={{ padding: 12, display: "flex", gap: 12 }}>
-        <Link to="/AAPL">AAPL</Link>
-        <Link to="/MSFT">MSFT</Link>
-      </nav>
+      <TopBar />
       <Routes>
         <Route index element={<Navigate to="/AAPL" replace />} />
-        <Route path="/" element={<Home />} />
         <Route path="/:symbol" element={<SymbolPage />} />
         <Route path="*" element={<Navigate to="/AAPL" replace />} />
       </Routes>
