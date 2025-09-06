@@ -1,9 +1,20 @@
 version: "3.8"
-
 services:
   stock_charts:
     build: .
     container_name: stock_charts
     restart: unless-stopped
     ports:
-      - "9099:80"  
+      - "9099:80"
+    depends_on:
+      - api
+
+  api:
+    build: ./api-server
+    container_name: stock_api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
