@@ -1,6 +1,38 @@
 <!doctype html>
 <html lang="en">
-<html lang="en">
   <head>
-  <script defer src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js"></script>
-  <script defer src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Charts</title>
+    <!-- UMD build so window.LightweightCharts is guaranteed -->
+    <script defer src="https://unpkg.com/lightweight-charts@5.0.8/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Visible runtime error overlay (so white screens show the error text) -->
+    <script>
+      window.addEventListener("error", e => {
+        document.body.insertAdjacentHTML("afterbegin",
+          `<pre style="white-space:pre-wrap;background:#210;color:#fee;padding:12px;border:1px solid #a00;margin:0">
+JS Error: ${e.message}
+
+${e.error && e.error.stack ? e.error.stack : "(no stack)"}
+</pre>`);
+      });
+      window.addEventListener("unhandledrejection", e => {
+        document.body.insertAdjacentHTML("afterbegin",
+          `<pre style="white-space:pre-wrap;background:#012;color:#def;padding:12px;border:1px solid #06c;margin:0">
+Unhandled Rejection: ${e.reason && e.reason.message ? e.reason.message : e.reason}
+</pre>`);
+      });
+    </script>
+  </head>
+  <body>
+    <!-- Small probe area (optional) -->
+    <div id="probe" style="height:180px;margin:8px;border:1px solid #333;border-radius:8px"></div>
+    <script defer src="/probe.js"></script>
+
+    <!-- ✅ React will mount here -->
+    <div id="root"></div>
+
+    <!-- Vite entry; Vite will rewrite this to /assets/*.js on build -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
