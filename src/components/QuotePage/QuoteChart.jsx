@@ -1,7 +1,6 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import StockChart from "../StockChart.jsx";
-
 export default function QuoteChart({ symbol }){
   const [sp]=useSearchParams();
   return (
@@ -11,6 +10,7 @@ export default function QuoteChart({ symbol }){
       range={sp.get("tf")||"6mo"}
       type={sp.get("type")||"area"}
       cmp={(sp.get("cmp")||"").toUpperCase()}
+      pane={sp.get("pane")||"off"}
     />
   );
 }
