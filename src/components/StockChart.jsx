@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createChart } from "lightweight-charts";
+import * as LWC from "lightweight-charts";                // robust import
 import { fetchDailyOHLC } from "../lib/ohlc";
 
 export default function StockChart({ symbol }) {
   const mountRef = useRef(null);
-  const [status, setStatus] = useState("loading"); // loading | ready | error
+  const [status, setStatus] = useState("loading");
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function StockChart({ symbol }) {
         if (!alive) return;
 
         const width = mountRef.current?.clientWidth || 960;
-        chart = createChart(mountRef.current, {
+        chart = LWC.createChart(mountRef.current, {
           width,
           height: 440,
           layout: { background: { type: "solid", color: "#0b0b0b" }, textColor: "#e5e7eb" },
@@ -25,22 +25,27 @@ export default function StockChart({ symbol }) {
           timeScale: { borderVisible: false },
         });
 
-        series = chart.addCandlestickSeries({
-          upColor: "#16a34a", downColor: "#ef4444",
-          borderUpColor: "#16a34a", borderDownColor: "#ef4444",
-          wickUpColor: "#16a34a", wickDownColor: "#ef4444",
-        });
-        series.setData(data);
+        const canCandle = typeof chart.addCandlestickSeries === "function";
+        if (canCandle) {
+          series = chart.addCandlestickSeries({
+            upColor: "#16a34a", downColor: "#ef4444",
+            borderUpColor: "#16a34a", borderDownColor: "#ef4444",
+            wickUpColor: "#16a34a", wickDownColor: "#ef4444",
+          });
+          series.setData(data);
+        } else {
+          // fallback to a line of close prices (older builds)
+          series = chart.addLineSeries({ lineWidth: 2 });
+          series.setData(data.map(d => ({ time: d.time, value: d.close })));
+        }
 
-        const onResize = () => {
-          chart.applyOptions({ width: mountRef.current?.clientWidth || 960 });
-        };
+        const onResize = () => chart.applyOptions({ width: mountRef.current?.clientWidth || 960 });
         window.addEventListener("resize", onResize);
-
         setStatus("ready");
+
         return () => {
           window.removeEventListener("resize", onResize);
-          if (chart) chart.remove();
+          chart.remove();
         };
       } catch (e) {
         console.error(e);
