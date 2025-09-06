@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import * as LWC from "lightweight-charts";                // robust import
+import { createChart } from "lightweight-charts";   // <-- canonical import
 import { fetchDailyOHLC } from "../lib/ohlc";
 
 export default function StockChart({ symbol }) {
@@ -9,14 +9,19 @@ export default function StockChart({ symbol }) {
 
   useEffect(() => {
     let chart, series, alive = true;
+
     (async () => {
       try {
         setStatus("loading"); setMsg("");
         const data = await fetchDailyOHLC(symbol);
         if (!alive) return;
 
+        if (typeof createChart !== "function") {
+          throw new Error("createChart import failed");
+        }
+
         const width = mountRef.current?.clientWidth || 960;
-        chart = LWC.createChart(mountRef.current, {
+        chart = createChart(mountRef.current, {
           width,
           height: 440,
           layout: { background: { type: "solid", color: "#0b0b0b" }, textColor: "#e5e7eb" },
@@ -25,18 +30,19 @@ export default function StockChart({ symbol }) {
           timeScale: { borderVisible: false },
         });
 
-        const canCandle = typeof chart.addCandlestickSeries === "function";
-        if (canCandle) {
+        // Prefer candles; fallback to line if something’s odd
+        if (typeof chart.addCandlestickSeries === "function") {
           series = chart.addCandlestickSeries({
             upColor: "#16a34a", downColor: "#ef4444",
             borderUpColor: "#16a34a", borderDownColor: "#ef4444",
             wickUpColor: "#16a34a", wickDownColor: "#ef4444",
           });
           series.setData(data);
-        } else {
-          // fallback to a line of close prices (older builds)
+        } else if (typeof chart.addLineSeries === "function") {
           series = chart.addLineSeries({ lineWidth: 2 });
           series.setData(data.map(d => ({ time: d.time, value: d.close })));
+        } else {
+          throw new Error("Chart API missing addSeries methods");
         }
 
         const onResize = () => chart.applyOptions({ width: mountRef.current?.clientWidth || 960 });
